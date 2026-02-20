@@ -5,43 +5,48 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  [cite_start]workflow_dispatch: # Permet de lancer le build manuellement [cite: 391, 392, 393]
 
 jobs:
   build:
     name: Build, Test, Sonar & Nexus
     runs-on: ubuntu-latest
     steps:
-      # Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v4
+        [cite_start]uses: actions/checkout@v4 [cite: 403, 404]
 
-      # Set up JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: maven
+          [cite_start]cache: maven [cite: 406, 407, 408, 409, 410, 411]
 
-      # Build + tests with Maven
       - name: Build with Maven
-        run: mvn clean verify
+        [cite_start]run: mvn clean verify [cite: 413, 414]
 
-      # SonarQube Analysis
       - name: SonarQube Analysis
         run: |
           mvn sonar:sonar \
-          -Dsonar.projectKey=springboot-app \
-          -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          -Dsonar.projectKey=bakry-yaya_spring-maven \
+          -Dsonar.organization=bakry-yaya \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }} 
 
-      # Publish to Nexus (only on main)
       - name: Publish to Nexus
         if: github.ref == 'refs/heads/main'
         run: mvn deploy -DskipTests
         env:
           NEXUS_USER: ${{ secrets.NEXUS_USER }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          [cite_start]NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }} [cite: 425, 426, 427, 428, 429, 430]
+
+      # Étape cruciale pour que le job Docker fonctionne [cite: 431, 432]
+      - name: Upload JAR artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: springboot-jar
+          [cite_start]path: target/*.jar [cite: 434, 435, 436, 437]
 
   docker:
     name: Build & Push Docker Image
@@ -49,26 +54,22 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/main'
     steps:
-      # Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v4
+        [cite_start]uses: actions/checkout@v4 [cite: 444, 445]
 
-      # Download JAR artifact from previous job
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
         with:
           name: springboot-jar
-          path: target
+          [cite_start]path: target [cite: 446, 447, 448, 449, 450]
 
-      # Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          [cite_start]password: ${{ secrets.DOCKERHUB_TOKEN }} [cite: 451, 452, 453, 454, 455]
 
-      # Build & Push Docker Image
       - name: Build & Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/springboot-app:latest .
-          docker push ${{ secrets.DOCKER_USERNAME }}/springboot-app:latest
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/springboot-app:latest .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/springboot-app:latest [cite: 456, 457, 458, 459]
