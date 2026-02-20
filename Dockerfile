@@ -1,5 +1,5 @@
 # Utilise Java 17 (conforme à ton projet)
-FROM eclipse-temurin:17-jdk
+FROM eclipse-temurin:17-jre
 
 # Dossier de travail dans l'image
 WORKDIR /app
